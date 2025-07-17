@@ -1,27 +1,3 @@
-#!/usr/bin/env python3
-"""
-Advanced Tumor Segmentation Module - ITK Implementation
-
-This module implements percentile-based thresholding for tumor segmentation,
-selected after comprehensive evaluation of multiple methods including:
-
-1. Percentile-based thresholding (98.5th percentile) - SELECTED
-2. Otsu automatic thresholding - Evaluated
-3. Region growing segmentation - Evaluated
-4. Watershed segmentation - Evaluated
-5. Connected components with morphological processing - Integrated
-
-The percentile method was chosen for its:
-- Robust performance across different image intensities
-- Automatic threshold selection without user intervention
-- Excellent balance between sensitivity and specificity
-- Minimal parameter tuning requirements
-- Consistent results across longitudinal studies
-
-Authors: EPITA Computer Vision Team
-Date: July 2025
-"""
-
 import itk
 import numpy as np
 from typing import Tuple
@@ -119,22 +95,21 @@ def _segment_single_tumor_percentile(image):
     connected_component_filter = itk.ConnectedComponentImageFilter.New(cast_filter.GetOutput())
     relabel_filter = itk.RelabelComponentImageFilter.New(
         connected_component_filter.GetOutput(),
-        MinimumObjectSize=100  # Filter out very small noise
+        MinimumObjectSize=100
     )
     
     # Get the largest object
     largest_object_filter = itk.BinaryThresholdImageFilter.New(
         relabel_filter.GetOutput(),
         LowerThreshold=1,
-        UpperThreshold=1,  # Keep only label 1 (the largest)
+        UpperThreshold=1,
         InsideValue=255,
         OutsideValue=0
     )
     largest_object_filter.Update()
 
     # Clean the mask with morphological opening to remove small noise
-    # This is crucial for clean masks and improved visualization
-    structuring_element = itk.FlatStructuringElement[3].Ball(2)  # 2-radius ball
+    structuring_element = itk.FlatStructuringElement[3].Ball(2)
     opening_filter = itk.BinaryMorphologicalOpeningImageFilter.New(
         largest_object_filter.GetOutput(),
         Kernel=structuring_element

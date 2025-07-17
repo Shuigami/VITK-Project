@@ -38,8 +38,6 @@ def analyze_changes(tumor_mask1, tumor_mask2, fixed_image):
         print(f"  Intersection: {intersection_volume} voxels")
         print(f"  Union: {union_volume} voxels")
         
-        # For longitudinal analysis, if there's no overlap, we can calculate
-        # a spatial relationship score instead of pure overlap
         if intersection_volume == 0:
             print("  No direct overlap found - calculating spatial relationship")
             # Calculate a modified similarity based on volume ratio
@@ -60,9 +58,9 @@ def analyze_changes(tumor_mask1, tumor_mask2, fixed_image):
 
     # Create change map
     change_map = np.zeros_like(mask1_array, dtype=np.uint8)
-    change_map[mask1_array & ~mask2_array] = 1  # Regression (tumor decreased)
-    change_map[~mask1_array & mask2_array] = 2  # Progression (tumor increased)
-    change_map[mask1_array & mask2_array] = 3   # Stable (no change)
+    change_map[mask1_array & ~mask2_array] = 1
+    change_map[~mask1_array & mask2_array] = 2
+    change_map[mask1_array & mask2_array] = 3
 
     print(f"\nTumor Change Analysis:")
     print(f"  Dice coefficient: {dice:.3f}")

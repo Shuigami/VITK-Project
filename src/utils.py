@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-"""
-Utilities Module for Longitudinal Tumor Analysis
-
-This module provides utility functions for file I/O operations,
-result saving, and data management.
-"""
-
 import itk
 import os
 from pathlib import Path
