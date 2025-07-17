@@ -302,5 +302,3 @@ Performance Système:
 ## Conclusion
 
 Ce projet démontre une maîtrise complète de la chaîne de traitement ITK/VTK avec des résultats quantitatifs pertinents. L'exploration systématique des algorithmes, la justification des choix techniques et la validation quantitative constituent les points forts de cette implémentation.
-
-Les résultats obtenus montrent une précision supérieure aux méthodes standard de la littérature, avec une automatisation complète du pipeline et des performances optimisées pour un usage pratique.
