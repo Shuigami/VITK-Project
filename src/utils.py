@@ -1,1 +1,170 @@
-#placeholder
+#!/usr/bin/env python3
+"""
+Utilities Module for Longitudinal Tumor Analysis
+
+This module provides utility functions for file I/O operations,
+result saving, and data management.
+"""
+
+import itk
+import os
+from pathlib import Path
+from typing import Dict, Any, Optional
+import numpy as np
+
+
+def load_image(path: str) -> Optional[itk.Image]:
+    """
+    Load a 3D medical image from file path.
+    
+    Args:
+        path: Path to the image file
+        
+    Returns:
+        ITK image object or None if loading fails
+    """
+    print(f"Loading image: {path}")
+    try:
+        if not Path(path).exists():
+            print(f"File not found: {path}")
+            return None
+            
+        image = itk.imread(path, itk.F)  # Load as float for registration
+        print(f"Image loaded successfully: {itk.size(image)}")
+        return image
+    except Exception as e:
+        print(f"Error loading image {path}: {e}")
+        return None
+
+
+def save_image(image: itk.Image, path: str) -> bool:
+    """
+    Save a 3D image to file path.
+    
+    Args:
+        image: ITK image object
+        path: Output file path
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    try:
+        # Ensure output directory exists
+        output_dir = Path(path).parent
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        print(f"Saving image: {path}")
+        itk.imwrite(image, path)
+        print(f"Image saved successfully")
+        return True
+    except Exception as e:
+        print(f"Error saving image {path}: {e}")
+        return False
+
+
+def save_results(registered_image: itk.Image, tumor_mask1: itk.Image, 
+                tumor_mask2: itk.Image, analysis_results: Dict[str, Any]) -> bool:
+    """
+    Save comprehensive analysis results to files.
+    
+    Args:
+        registered_image: Registered moving image
+        tumor_mask1: First tumor mask
+        tumor_mask2: Second tumor mask
+        analysis_results: Dictionary containing analysis metrics
+        
+    Returns:
+        True if all saves successful, False otherwise
+    """
+    try:
+        # Create output directory
+        output_dir = Path("output")
+        output_dir.mkdir(exist_ok=True)
+        
+        print("Saving analysis results...")
+        
+        # Save images
+        save_success = []
+        save_success.append(save_image(registered_image, str(output_dir / "registered_image.nrrd")))
+        save_success.append(save_image(tumor_mask1, str(output_dir / "tumor_mask1.nrrd")))
+        save_success.append(save_image(tumor_mask2, str(output_dir / "tumor_mask2.nrrd")))
+        
+        # Save detailed analysis results
+        results_file = output_dir / "analysis_results.txt"
+        with open(results_file, "w", encoding="utf-8") as f:
+            f.write("LONGITUDINAL TUMOR ANALYSIS RESULTS\n")
+            f.write("=" * 50 + "\n\n")
+            
+            f.write("QUANTITATIVE METRICS:\n")
+            f.write("-" * 25 + "\n")
+            f.write(f"Dice Coefficient: {analysis_results.get('dice_coefficient', 0):.4f}\n")
+            f.write(f"Jaccard Index: {analysis_results.get('jaccard_index', 0):.4f}\n")
+            f.write("\n")
+            
+            f.write("VOLUMETRIC ANALYSIS:\n")
+            f.write("-" * 22 + "\n")
+            f.write(f"Tumor Volume T1: {analysis_results.get('volume1', 0):.2f} mm³\n")
+            f.write(f"Tumor Volume T2: {analysis_results.get('volume2', 0):.2f} mm³\n")
+            
+            # Calculate volume change
+            vol1 = analysis_results.get('volume1', 0)
+            vol2 = analysis_results.get('volume2', 0)
+            if vol1 > 0 and vol2 > 0:
+                vol_change = vol2 - vol1
+                vol_change_percent = (vol_change / vol1) * 100
+                f.write(f"Volume Change: {vol_change:+.2f} mm³\n")
+                f.write(f"Volume Change (%): {vol_change_percent:+.1f}%\n")
+            else:
+                f.write("Volume Change: N/A\n")
+                f.write("Volume Change (%): N/A\n")
+            f.write("\n")
+            
+            f.write("TECHNICAL DETAILS:\n")
+            f.write("-" * 20 + "\n")
+            f.write("Registration Method: ITK VersorRigid3D\n")
+            f.write("Segmentation Method: Percentile Thresholding (98.5%)\n")
+            f.write("Visualization: VTK Volume Rendering + Surface Extraction\n")
+            f.write("Image Format: NRRD\n")
+            f.write("Coordinate System: ITK Physical Space\n")
+            f.write("\n")
+            
+            f.write("OUTPUT FILES:\n")
+            f.write("-" * 15 + "\n")
+            f.write("• registered_image.nrrd - Registered moving image\n")
+            f.write("• tumor_mask1.nrrd - First tumor segmentation mask\n")
+            f.write("• tumor_mask2.nrrd - Second tumor segmentation mask\n")
+            f.write("• analysis_results.txt - This detailed report\n")
+            f.write("\n")
+            f.write(f"Generated by ITK/VTK Longitudinal Analysis Pipeline\n")
+        
+        print(f"Results saved to: {results_file}")
+        
+        return all(save_success)
+        
+    except Exception as e:
+        print(f"Error saving results: {e}")
+        return False
+
+
+def create_output_directory() -> Path:
+    """Create and return the output directory path."""
+    output_dir = Path("output")
+    output_dir.mkdir(exist_ok=True)
+    return output_dir
+
+
+def validate_file_paths(file_paths: list) -> bool:
+    """
+    Validate that all file paths exist.
+    
+    Args:
+        file_paths: List of file path strings
+        
+    Returns:
+        True if all files exist, False otherwise
+    """
+    for file_path in file_paths:
+        if not Path(file_path).exists():
+            print(f"Missing file: {file_path}")
+            return False
+    return True
